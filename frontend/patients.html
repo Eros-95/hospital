@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>患者管理</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+    background: linear-gradient(160deg, #eaf7ec 0%, #d8f0dc 50%, #eaf7ec 100%);
+    min-height: 100vh;
+    padding: 40px 16px;
+    color: #2b3a4a;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  .card {
+    background: #fff; border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(76, 175, 80, 0.15); overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .header {
+    background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+    padding: 22px 28px; color: #fff;
+  }
+  .header h1 { font-size: 22px; font-weight: 600; letter-spacing: 1px; }
+  .header p { margin-top: 4px; font-size: 13px; opacity: 0.9; }
+  .body { padding: 24px 28px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; color: #3f6b45; }
+  input, select {
+    width: 100%; padding: 10px 12px; font-size: 14px; color: #2b3a4a;
+    border: 1px solid #c9e6cb; border-radius: 8px; background: #f7fbf7;
+    outline: none; font-family: inherit; transition: all 0.2s ease;
+  }
+  input:focus, select:focus { border-color: #66bb6a; background: #fff; box-shadow: 0 0 0 3px rgba(102,187,106,0.15); }
+  .radio-group { display: flex; gap: 18px; align-items: center; }
+  .radio-group label { display: flex; align-items: center; gap: 6px; font-weight: 500; margin-bottom: 0; cursor: pointer; }
+  .radio-group input[type="radio"] { width: auto; accent-color: #66bb6a; }
+  .btn {
+    display: inline-block; padding: 11px 20px; font-size: 15px; font-weight: 600; color: #fff;
+    background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%); border: none; border-radius: 8px;
+    cursor: pointer; letter-spacing: 1px; transition: all 0.2s ease;
+  }
+  .btn:hover { box-shadow: 0 6px 16px rgba(67,160,71,0.35); transform: translateY(-1px); }
+  .btn.cancel { background: #9e9e9e; }
+  .toolbar { display: flex; gap: 12px; margin-bottom: 16px; }
+  .toolbar input { flex: 1; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #eef3ee; }
+  th { background: #f2faf3; color: #3f6b45; font-weight: 600; }
+  .link-btn { color: #43a047; cursor: pointer; border: none; background: none; font-size: 14px; }
+  .link-btn:hover { text-decoration: underline; }
+  .empty { text-align: center; color: #9aa; padding: 24px 0; }
+  .msg { padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 14px; display: none; }
+  .msg.ok { display: block; background: #e6f6e8; color: #2e7d32; }
+  .msg.err { display: block; background: #fdecea; color: #c62828; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="header">
+      <h1>患者管理</h1>
+      <p>支持患者信息新增、查询、编辑</p>
+    </div>
+    <div class="body">
+      <div class="msg" id="msg"></div>
+      <div class="form-grid">
+        <div>
+          <label>姓名<span style="color:#e05b5b"> *</span></label>
+          <input type="text" id="name" placeholder="请输入患者姓名">
+        </div>
+        <div>
+          <label>性别<span style="color:#e05b5b"> *</span></label>
+          <div class="radio-group">
+            <label><input type="radio" name="gender" value="男" checked> 男</label>
+            <label><input type="radio" name="gender" value="女"> 女</label>
+          </div>
+        </div>
+        <div>
+          <label>年龄<span style="color:#e05b5b"> *</span></label>
+          <input type="number" id="age" placeholder="请输入年龄" min="0" max="150">
+        </div>
+        <div>
+          <label>联系电话</label>
+          <input type="tel" id="phone" placeholder="请输入手机号码">
+        </div>
+        <div class="full">
+          <label>身份证号</label>
+          <input type="text" id="id_card" placeholder="请输入18位身份证号" maxlength="18">
+        </div>
+        <div class="full">
+          <button class="btn" id="submitBtn" onclick="savePatient()">新增患者</button>
+          <button class="btn cancel" id="cancelBtn" onclick="resetForm()" style="display:none">取消编辑</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="body">
+      <div class="toolbar">
+        <input type="text" id="keyword" placeholder="搜索姓名 / 手机号" oninput="loadPatients()">
+        <button class="btn" onclick="loadPatients()">查询</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>姓名</th><th>性别</th><th>年龄</th><th>联系电话</th><th>身份证号</th><th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="empty" id="empty" style="display:none">暂无患者记录</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = (location.protocol === 'file:') ? 'http://127.0.0.1:8000' : '';
+let editingId = null;
+
+function showMsg(text, ok) {
+  const el = document.getElementById('msg');
+  el.textContent = text;
+  el.className = 'msg ' + (ok ? 'ok' : 'err');
+}
+
+function resetForm() {
+  editingId = null;
+  document.getElementById('name').value = '';
+  document.getElementById('age').value = '';
+  document.getElementById('phone').value = '';
+  document.getElementById('id_card').value = '';
+  document.querySelector('input[name="gender"][value="男"]').checked = true;
+  document.getElementById('submitBtn').textContent = '新增患者';
+  document.getElementById('cancelBtn').style.display = 'none';
+}
+
+function getGender() {
+  return document.querySelector('input[name="gender"]:checked').value;
+}
+
+function savePatient() {
+  const name = document.getElementById('name').value.trim();
+  const age = document.getElementById('age').value;
+  if (!name) { showMsg('请填写姓名', false); return; }
+  if (age === '' || age === null) { showMsg('请填写年龄', false); return; }
+
+  const body = {
+    name: name,
+    gender: getGender(),
+    age: Number(age),
+    phone: document.getElementById('phone').value.trim(),
+    id_card: document.getElementById('id_card').value.trim()
+  };
+
+  const url = editingId ? API_BASE + '/api/patients/' + editingId : API_BASE + '/api/patients';
+  const method = editingId ? 'PUT' : 'POST';
+
+  fetch(url, {
+    method: method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+    .then(res => res.json().then(data => ({ ok: res.ok, data: data })))
+    .then(({ ok, data }) => {
+      if (!ok) {
+        const msg = data.detail ? (typeof data.detail === 'string' ? data.detail : '参数错误') : '操作失败';
+        showMsg(msg, false);
+        return;
+      }
+      showMsg(editingId ? '修改成功' : '新增成功', true);
+      resetForm();
+      loadPatients();
+    })
+    .catch(() => showMsg('请求失败，请确认后端已启动', false));
+}
+
+function loadPatients() {
+  const keyword = document.getElementById('keyword').value.trim();
+  const url = API_BASE + '/api/patients' + (keyword ? '?keyword=' + encodeURIComponent(keyword) : '');
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      const tbody = document.getElementById('tbody');
+      const empty = document.getElementById('empty');
+      tbody.innerHTML = '';
+      const items = data.items || [];
+      if (items.length === 0) { empty.style.display = 'block'; return; }
+      empty.style.display = 'none';
+      items.forEach(p => {
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td>' + escapeHtml(p.name) + '</td>' +
+          '<td>' + escapeHtml(p.gender) + '</td>' +
+          '<td>' + p.age + '</td>' +
+          '<td>' + escapeHtml(p.phone || '') + '</td>' +
+          '<td>' + escapeHtml(p.id_card || '') + '</td>' +
+          '<td><button class="link-btn" onclick="editPatient(' + p.id + ')">编辑</button></td>';
+        tbody.appendChild(tr);
+      });
+    })
+    .catch(() => showMsg('加载失败，请确认后端已启动', false));
+}
+
+function editPatient(id) {
+  fetch(API_BASE + '/api/patients/' + id)
+    .then(res => res.json())
+    .then(p => {
+      editingId = p.id;
+      document.getElementById('name').value = p.name;
+      document.getElementById('age').value = p.age;
+      document.getElementById('phone').value = p.phone || '';
+      document.getElementById('id_card').value = '';
+      const genderInput = document.querySelector('input[name="gender"][value="' + p.gender + '"]');
+      if (genderInput) genderInput.checked = true;
+      document.getElementById('submitBtn').textContent = '保存修改';
+      document.getElementById('cancelBtn').style.display = 'inline-block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    })
+    .catch(() => showMsg('加载患者信息失败', false));
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str == null ? '' : String(str);
+  return div.innerHTML;
+}
+
+loadPatients();
+</script>
+</body>
+</html>

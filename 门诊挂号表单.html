@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>门诊挂号表单</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+    background: linear-gradient(160deg, #eaf7ec 0%, #d8f0dc 50%, #eaf7ec 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 16px;
+    color: #2b3a4a;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 600px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(76, 175, 80, 0.15);
+    overflow: hidden;
+  }
+
+  .header {
+    background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+    padding: 28px 32px;
+    color: #ffffff;
+  }
+
+  .header h1 {
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+
+  .header p {
+    margin-top: 6px;
+    font-size: 14px;
+    opacity: 0.9;
+  }
+
+  .header .icon {
+    display: inline-block;
+    margin-right: 8px;
+    font-size: 26px;
+    vertical-align: middle;
+  }
+
+  .form {
+    padding: 32px;
+  }
+
+  .form-group {
+    margin-bottom: 22px;
+  }
+
+  label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #3f6b45;
+  }
+
+  label .required {
+    color: #e05b5b;
+    margin-left: 2px;
+  }
+
+  input,
+  select {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 15px;
+    color: #2b3a4a;
+    border: 1px solid #c9e6cb;
+    border-radius: 8px;
+    background: #f7fbf7;
+    transition: all 0.2s ease;
+    outline: none;
+    font-family: inherit;
+  }
+
+  input:hover,
+  select:hover {
+    border-color: #a5d6a7;
+  }
+
+  input:focus,
+  select:focus {
+    border-color: #66bb6a;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(102, 187, 106, 0.15);
+  }
+
+  .row {
+    display: flex;
+    gap: 16px;
+  }
+
+  .row .form-group {
+    flex: 1;
+  }
+
+  .radio-group {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+
+  .radio-group label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+    margin-bottom: 0;
+    cursor: pointer;
+  }
+
+  .radio-group input[type="radio"] {
+    width: auto;
+    accent-color: #66bb6a;
+    cursor: pointer;
+  }
+
+  .submit-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #ffffff;
+    background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 2px;
+    margin-top: 6px;
+  }
+
+  .submit-btn:hover {
+    background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+    box-shadow: 0 6px 16px rgba(67, 160, 71, 0.35);
+    transform: translateY(-1px);
+  }
+
+  .submit-btn:active {
+    transform: translateY(0);
+    box-shadow: none;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <h1><span class="icon">&#10011;</span>门诊挂号表单</h1>
+      <p>请填写以下信息完成预约挂号</p>
+    </div>
+
+    <form class="form" onsubmit="alert('挂号信息已提交（演示）'); return false;">
+      <div class="form-group">
+        <label>患者姓名<span class="required">*</span></label>
+        <input type="text" name="name" placeholder="请输入患者姓名" required>
+      </div>
+
+      <div class="form-group">
+        <label>性别<span class="required">*</span></label>
+        <div class="radio-group">
+          <label><input type="radio" name="gender" value="男" checked> 男</label>
+          <label><input type="radio" name="gender" value="女"> 女</label>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="form-group">
+          <label>年龄<span class="required">*</span></label>
+          <input type="number" name="age" placeholder="请输入年龄" min="0" max="150" required>
+        </div>
+        <div class="form-group">
+          <label>联系电话<span class="required">*</span></label>
+          <input type="tel" name="phone" placeholder="请输入手机号码" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>身份证号<span class="required">*</span></label>
+        <input type="text" name="idcard" placeholder="请输入18位身份证号" maxlength="18" required>
+      </div>
+
+      <div class="form-group">
+        <label>医保卡号</label>
+        <input type="text" name="insurance" placeholder="请输入医保卡号（选填）">
+      </div>
+
+      <div class="row">
+        <div class="form-group">
+          <label>选择科室<span class="required">*</span></label>
+          <select name="department" required>
+            <option value="" disabled selected>请选择科室</option>
+            <option value="内科">内科</option>
+            <option value="外科">外科</option>
+            <option value="儿科">儿科</option>
+            <option value="妇产科">妇产科</option>
+            <option value="眼科">眼科</option>
+            <option value="口腔科">口腔科</option>
+            <option value="皮肤科">皮肤科</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>选择医生<span class="required">*</span></label>
+          <select name="doctor" required>
+            <option value="" disabled selected>请选择医生</option>
+            <option value="张伟">张伟 主任医师</option>
+            <option value="李娜">李娜 副主任医师</option>
+            <option value="王强">王强 主治医师</option>
+            <option value="刘敏">刘敏 主治医师</option>
+            <option value="陈静">陈静 主任医师</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>预约日期时间<span class="required">*</span></label>
+        <input type="datetime-local" name="appointment" required>
+      </div>
+
+      <button type="submit" class="submit-btn">提交挂号</button>
+    </form>
+  </div>
+</body>
+</html>
