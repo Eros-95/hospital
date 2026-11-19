@@ -86,3 +86,17 @@ def update_patient(patient_id: int, data: PatientUpdate):
     row = conn.execute("SELECT * FROM patients WHERE id = ?", (patient_id,)).fetchone()
     conn.close()
     return dict(row)
+
+
+@router.delete("/{patient_id}", status_code=204)
+def delete_patient(patient_id: int):
+    conn = database.get_connection()
+    row = conn.execute("SELECT id FROM patients WHERE id = ?", (patient_id,)).fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="患者不存在")
+    conn.execute("DELETE FROM visits WHERE patient_id = ?", (patient_id,))
+    conn.execute("DELETE FROM patients WHERE id = ?", (patient_id,))
+    conn.commit()
+    conn.close()
+    return None

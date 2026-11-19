@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>就诊记录</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+    background: linear-gradient(160deg, #eaf7ec 0%, #d8f0dc 50%, #eaf7ec 100%);
+    min-height: 100vh;
+    padding: 40px 16px;
+    color: #2b3a4a;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  .card {
+    background: #fff; border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(76, 175, 80, 0.15); overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .header {
+    background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+    padding: 22px 28px; color: #fff;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header h1 { font-size: 22px; font-weight: 600; letter-spacing: 1px; }
+  .header p { margin-top: 4px; font-size: 13px; opacity: 0.9; }
+  .body { padding: 24px 28px; }
+  .toolbar { display: flex; gap: 12px; margin-bottom: 16px; }
+  .toolbar input { flex: 1; }
+  input, select {
+    padding: 10px 12px; font-size: 14px; color: #2b3a4a;
+    border: 1px solid #c9e6cb; border-radius: 8px; background: #f7fbf7;
+    outline: none; font-family: inherit; transition: all 0.2s ease;
+  }
+  input:focus, select:focus { border-color: #66bb6a; background: #fff; box-shadow: 0 0 0 3px rgba(102,187,106,0.15); }
+  .btn {
+    display: inline-block; padding: 11px 20px; font-size: 15px; font-weight: 600; color: #fff;
+    background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%); border: none; border-radius: 8px;
+    cursor: pointer; letter-spacing: 1px; transition: all 0.2s ease; white-space: nowrap;
+  }
+  .btn:hover { box-shadow: 0 6px 16px rgba(67,160,71,0.35); transform: translateY(-1px); }
+  .btn.plain { background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.6); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eef3ee; }
+  th { background: #f2faf3; color: #3f6b45; font-weight: 600; }
+  tbody tr { cursor: pointer; transition: background 0.15s ease; }
+  tbody tr:hover { background: #f4fbf5; }
+  .link-btn { color: #43a047; cursor: pointer; border: none; background: none; font-size: 14px; }
+  .link-btn:hover { text-decoration: underline; }
+  .empty { text-align: center; color: #9aa; padding: 24px 0; }
+  .msg { padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 14px; display: none; }
+  .msg.err { display: block; background: #fdecea; color: #c62828; }
+  .tag { display: inline-block; padding: 2px 10px; border-radius: 20px; background: #e8f5e9; color: #2e7d32; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="header">
+      <div>
+        <h1>就诊记录</h1>
+        <p>查询门诊就诊记录，点击行查看详情</p>
+      </div>
+      <button class="btn plain" onclick="location.href='visit_edit.html'">新增就诊记录</button>
+    </div>
+    <div class="body">
+      <div class="msg" id="msg"></div>
+      <div class="toolbar">
+        <input type="text" id="keyword" placeholder="搜索患者姓名 / 诊断 / 科室" oninput="loadVisits()">
+        <button class="btn" onclick="loadVisits()">查询</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>患者姓名</th><th>科室</th><th>诊断</th><th>就诊时间</th><th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="empty" id="empty" style="display:none">暂无就诊记录</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = (location.protocol === 'file:') ? 'http://127.0.0.1:8000' : '';
+
+function showMsg(text) {
+  const el = document.getElementById('msg');
+  el.textContent = text;
+  el.className = 'msg err';
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str == null ? '' : String(str);
+  return div.innerHTML;
+}
+
+function formatTime(t) {
+  if (!t) return '';
+  return t.replace('T', ' ');
+}
+
+function loadVisits() {
+  const keyword = document.getElementById('keyword').value.trim();
+  const url = API_BASE + '/api/visits' + (keyword ? '?keyword=' + encodeURIComponent(keyword) : '');
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      const tbody = document.getElementById('tbody');
+      const empty = document.getElementById('empty');
+      tbody.innerHTML = '';
+      const items = data.items || [];
+      if (items.length === 0) { empty.style.display = 'block'; return; }
+      empty.style.display = 'none';
+      items.forEach(v => {
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td>' + escapeHtml(v.patient_name) + '</td>' +
+          '<td><span class="tag">' + escapeHtml(v.department) + '</span></td>' +
+          '<td>' + escapeHtml(v.diagnosis) + '</td>' +
+          '<td>' + escapeHtml(formatTime(v.visit_time)) + '</td>' +
+          '<td><button class="link-btn" onclick="event.stopPropagation(); location.href=\'visit_detail.html?id=' + v.id + '\'">详情</button></td>';
+        tr.onclick = () => location.href = 'visit_detail.html?id=' + v.id;
+        tbody.appendChild(tr);
+      });
+    })
+    .catch(() => showMsg('加载失败，请确认后端已启动'));
+}
+
+loadVisits();
+</script>
+</body>
+</html>

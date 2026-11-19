@@ -199,7 +199,8 @@ function loadPatients() {
           '<td>' + p.age + '</td>' +
           '<td>' + escapeHtml(p.phone || '') + '</td>' +
           '<td>' + escapeHtml(p.id_card || '') + '</td>' +
-          '<td><button class="link-btn" onclick="editPatient(' + p.id + ')">编辑</button></td>';
+          '<td><button class="link-btn" onclick="editPatient(' + p.id + ')">编辑</button> ' +
+          '<button class="link-btn" style="color:#e05b5b" onclick="deletePatient(' + p.id + ')">删除</button></td>';
         tbody.appendChild(tr);
       });
     })
@@ -222,6 +223,16 @@ function editPatient(id) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     })
     .catch(() => showMsg('加载患者信息失败', false));
+}
+
+function deletePatient(id) {
+  if (!confirm('确定删除该患者吗？其关联的就诊记录将一并删除')) return;
+  fetch(API_BASE + '/api/patients/' + id, { method: 'DELETE' })
+    .then(res => {
+      if (res.ok) { showMsg('删除成功', true); loadPatients(); return; }
+      res.json().then(d => showMsg(d.detail || '删除失败', false));
+    })
+    .catch(() => showMsg('请求失败，请确认后端已启动', false));
 }
 
 function escapeHtml(str) {

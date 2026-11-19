@@ -6,7 +6,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import database
-from .routers import patients
+from .routers import patients, visits
 
 database.init_db()
 
@@ -21,6 +21,7 @@ app.add_middleware(
 )
 
 app.include_router(patients.router)
+app.include_router(visits.router)
 
 
 @app.get("/")

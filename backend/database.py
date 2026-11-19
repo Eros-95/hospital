@@ -26,5 +26,22 @@ def init_db():
         )
         """
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS visits (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_id INTEGER NOT NULL,
+            department TEXT NOT NULL,
+            diagnosis TEXT NOT NULL,
+            doctor TEXT,
+            chief_complaint TEXT,
+            treatment TEXT,
+            visit_time TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY (patient_id) REFERENCES patients (id)
+        )
+        """
+    )
     conn.commit()
     conn.close()

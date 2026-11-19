@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>就诊记录编辑</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+    background: linear-gradient(160deg, #eaf7ec 0%, #d8f0dc 50%, #eaf7ec 100%);
+    min-height: 100vh;
+    padding: 40px 16px;
+    color: #2b3a4a;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  .card {
+    background: #fff; border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(76, 175, 80, 0.15); overflow: hidden;
+  }
+  .header {
+    background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+    padding: 22px 28px; color: #fff;
+  }
+  .header h1 { font-size: 22px; font-weight: 600; letter-spacing: 1px; }
+  .header p { margin-top: 4px; font-size: 13px; opacity: 0.9; }
+  .body { padding: 24px 28px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; color: #3f6b45; }
+  input, select, textarea {
+    width: 100%; padding: 10px 12px; font-size: 14px; color: #2b3a4a;
+    border: 1px solid #c9e6cb; border-radius: 8px; background: #f7fbf7;
+    outline: none; font-family: inherit; transition: all 0.2s ease;
+  }
+  textarea { resize: vertical; min-height: 72px; }
+  input:focus, select:focus, textarea:focus { border-color: #66bb6a; background: #fff; box-shadow: 0 0 0 3px rgba(102,187,106,0.15); }
+  .btn {
+    display: inline-block; padding: 11px 20px; font-size: 15px; font-weight: 600; color: #fff;
+    background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%); border: none; border-radius: 8px;
+    cursor: pointer; letter-spacing: 1px; transition: all 0.2s ease;
+  }
+  .btn:hover { box-shadow: 0 6px 16px rgba(67,160,71,0.35); transform: translateY(-1px); }
+  .btn.cancel { background: #9e9e9e; }
+  .msg { padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 14px; display: none; }
+  .msg.ok { display: block; background: #e6f6e8; color: #2e7d32; }
+  .msg.err { display: block; background: #fdecea; color: #c62828; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="header">
+      <h1 id="title">新增就诊记录</h1>
+      <p>填写门诊就诊信息</p>
+    </div>
+    <div class="body">
+      <div class="msg" id="msg"></div>
+      <div class="form-grid">
+        <div class="full">
+          <label>患者<span style="color:#e05b5b"> *</span></label>
+          <select id="patient_id"></select>
+        </div>
+        <div>
+          <label>科室<span style="color:#e05b5b"> *</span></label>
+          <select id="department"></select>
+        </div>
+        <div>
+          <label>接诊医生</label>
+          <select id="doctor"></select>
+        </div>
+        <div class="full">
+          <label>诊断<span style="color:#e05b5b"> *</span></label>
+          <input type="text" id="diagnosis" placeholder="请输入诊断结果">
+        </div>
+        <div class="full">
+          <label>就诊时间<span style="color:#e05b5b"> *</span></label>
+          <input type="datetime-local" id="visit_time">
+        </div>
+        <div class="full">
+          <label>主诉</label>
+          <textarea id="chief_complaint" placeholder="患者主要不适症状"></textarea>
+        </div>
+        <div class="full">
+          <label>处理 / 医嘱</label>
+          <textarea id="treatment" placeholder="治疗方案与医嘱"></textarea>
+        </div>
+        <div class="full">
+          <button class="btn" id="submitBtn" onclick="saveVisit()">保存</button>
+          <button class="btn cancel" onclick="location.href='visits.html'">取消</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = (location.protocol === 'file:') ? 'http://127.0.0.1:8000' : '';
+const DEPARTMENTS = ["内科", "外科", "儿科", "妇产科", "骨科", "眼科", "耳鼻喉科", "皮肤科", "口腔科", "急诊科", "中医科"];
+const DOCTOR_MAP = {
+  "内科": ["王伟", "李娜"],
+  "外科": ["张强", "刘洋"],
+  "儿科": ["陈静", "孙敏"],
+  "妇产科": ["赵磊", "周涛"],
+  "骨科": ["王伟", "张强"],
+  "眼科": ["李娜", "刘洋"],
+  "耳鼻喉科": ["陈静"],
+  "皮肤科": ["赵磊", "孙敏"],
+  "口腔科": ["周涛"],
+  "急诊科": ["王伟", "刘洋", "陈静"],
+  "中医科": ["李娜", "张强"]
+};
+
+const params = new URLSearchParams(location.search);
+const editingId = params.get('id');
+
+function showMsg(text, ok) {
+  const el = document.getElementById('msg');
+  el.textContent = text;
+  el.className = 'msg ' + (ok ? 'ok' : 'err');
+}
+
+function fillSelect(el, options, placeholder) {
+  el.innerHTML = '';
+  if (placeholder) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = placeholder;
+    el.appendChild(opt);
+  }
+  options.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v;
+    opt.textContent = v;
+    el.appendChild(opt);
+  });
+}
+
+function updateDoctors(selected) {
+  const dept = document.getElementById('department').value;
+  const doctors = DOCTOR_MAP[dept] || [];
+  fillSelect(document.getElementById('doctor'), doctors, doctors.length ? '请选择医生' : '');
+  if (selected) document.getElementById('doctor').value = selected;
+}
+
+function loadPatients(callback) {
+  fetch(API_BASE + '/api/patients?page_size=100')
+    .then(res => res.json())
+    .then(data => {
+      const el = document.getElementById('patient_id');
+      el.innerHTML = '';
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = '请选择患者';
+      el.appendChild(placeholder);
+      (data.items || []).forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.name + '（' + p.gender + ' / ' + p.age + '岁）';
+        el.appendChild(opt);
+      });
+      if (callback) callback();
+    })
+    .catch(() => showMsg('加载患者列表失败', false));
+}
+
+function loadVisit() {
+  fetch(API_BASE + '/api/visits/' + editingId)
+    .then(res => res.json())
+    .then(v => {
+      document.getElementById('title').textContent = '编辑就诊记录';
+      document.getElementById('patient_id').value = v.patient_id;
+      document.getElementById('department').value = v.department;
+      updateDoctors(v.doctor || '');
+      document.getElementById('diagnosis').value = v.diagnosis;
+      document.getElementById('visit_time').value = (v.visit_time || '').slice(0, 16);
+      document.getElementById('chief_complaint').value = v.chief_complaint || '';
+      document.getElementById('treatment').value = v.treatment || '';
+    })
+    .catch(() => showMsg('加载就诊记录失败', false));
+}
+
+function saveVisit() {
+  const patient_id = document.getElementById('patient_id').value;
+  const department = document.getElementById('department').value;
+  const diagnosis = document.getElementById('diagnosis').value.trim();
+  const visit_time = document.getElementById('visit_time').value;
+
+  if (!patient_id) { showMsg('请选择患者', false); return; }
+  if (!department) { showMsg('请选择科室', false); return; }
+  if (!diagnosis) { showMsg('请填写诊断', false); return; }
+  if (!visit_time) { showMsg('请填写就诊时间', false); return; }
+
+  const body = {
+    patient_id: Number(patient_id),
+    department: department,
+    diagnosis: diagnosis,
+    doctor: document.getElementById('doctor').value,
+    chief_complaint: document.getElementById('chief_complaint').value.trim(),
+    treatment: document.getElementById('treatment').value.trim(),
+    visit_time: visit_time
+  };
+
+  const url = editingId ? API_BASE + '/api/visits/' + editingId : API_BASE + '/api/visits';
+  const method = editingId ? 'PUT' : 'POST';
+
+  fetch(url, {
+    method: method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+    .then(res => res.json().then(data => ({ ok: res.ok, data: data })))
+    .then(({ ok, data }) => {
+      if (!ok) {
+        const msg = data.detail ? (typeof data.detail === 'string' ? data.detail : '参数错误') : '操作失败';
+        showMsg(msg, false);
+        return;
+      }
+      showMsg(editingId ? '修改成功' : '新增成功', true);
+      setTimeout(() => location.href = 'visit_detail.html?id=' + data.id, 600);
+    })
+    .catch(() => showMsg('请求失败，请确认后端已启动', false));
+}
+
+fillSelect(document.getElementById('department'), DEPARTMENTS, '请选择科室');
+updateDoctors();
+document.getElementById('department').addEventListener('change', function() { updateDoctors(); });
+if (editingId) {
+  loadPatients(loadVisit);
+} else {
+  loadPatients();
+}
+</script>
+</body>
+</html>

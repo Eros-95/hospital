@@ -30,3 +30,36 @@ class Patient(BaseModel):
     id_card: Optional[str] = None
     created_at: str
     updated_at: str
+
+
+class VisitCreate(BaseModel):
+    patient_id: int
+    department: str = Field(min_length=1, max_length=50)
+    diagnosis: str = Field(min_length=1, max_length=200)
+    doctor: Optional[str] = None
+    chief_complaint: Optional[str] = None
+    treatment: Optional[str] = None
+    visit_time: str = Field(min_length=1, max_length=50)
+
+
+class VisitUpdate(BaseModel):
+    patient_id: Optional[int] = None
+    department: Optional[str] = Field(default=None, min_length=1, max_length=50)
+    diagnosis: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    doctor: Optional[str] = None
+    chief_complaint: Optional[str] = None
+    treatment: Optional[str] = None
+    visit_time: Optional[str] = Field(default=None, min_length=1, max_length=50)
+
+
+class Visit(BaseModel):
+    id: int
+    patient_id: int
+    department: str
+    diagnosis: str
+    doctor: Optional[str] = None
+    chief_complaint: Optional[str] = None
+    treatment: Optional[str] = None
+    visit_time: str
+    created_at: str
+    updated_at: str
