@@ -53,6 +53,14 @@
   .msg { padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 14px; display: none; }
   .msg.err { display: block; background: #fdecea; color: #c62828; }
   .tag { display: inline-block; padding: 2px 10px; border-radius: 20px; background: #e8f5e9; color: #2e7d32; font-size: 12px; }
+  .pagination { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 16px; }
+  .pagination .page-btn {
+    padding: 7px 14px; font-size: 14px; color: #43a047; background: #fff;
+    border: 1px solid #c9e6cb; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;
+  }
+  .pagination .page-btn:hover:not(:disabled) { background: #e8f5e9; }
+  .pagination .page-btn:disabled { color: #bbb; cursor: not-allowed; }
+  .pagination .page-info { font-size: 14px; color: #667; }
 </style>
 </head>
 <body>
@@ -68,8 +76,8 @@
     <div class="body">
       <div class="msg" id="msg"></div>
       <div class="toolbar">
-        <input type="text" id="keyword" placeholder="搜索患者姓名 / 诊断 / 科室" oninput="loadVisits()">
-        <button class="btn" onclick="loadVisits()">查询</button>
+        <input type="text" id="keyword" placeholder="搜索患者姓名 / 诊断 / 科室" oninput="searchVisits()">
+        <button class="btn" onclick="searchVisits()">查询</button>
       </div>
       <table>
         <thead>
@@ -80,12 +88,19 @@
         <tbody id="tbody"></tbody>
       </table>
       <div class="empty" id="empty" style="display:none">暂无就诊记录</div>
+      <div class="pagination" id="pagination" style="display:none">
+        <button class="page-btn" id="prevBtn" onclick="goToPage(currentPage - 1)">上一页</button>
+        <span class="page-info" id="pageInfo"></span>
+        <button class="page-btn" id="nextBtn" onclick="goToPage(currentPage + 1)">下一页</button>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
 const API_BASE = (location.protocol === 'file:') ? 'http://127.0.0.1:8000' : '';
+const PAGE_SIZE = 10;
+let currentPage = 1;
 
 function showMsg(text) {
   const el = document.getElementById('msg');
@@ -104,17 +119,29 @@ function formatTime(t) {
   return t.replace('T', ' ');
 }
 
+function goToPage(page) {
+  currentPage = page;
+  loadVisits();
+}
+
+function searchVisits() {
+  currentPage = 1;
+  loadVisits();
+}
+
 function loadVisits() {
   const keyword = document.getElementById('keyword').value.trim();
-  const url = API_BASE + '/api/visits' + (keyword ? '?keyword=' + encodeURIComponent(keyword) : '');
-  fetch(url)
+  const params = new URLSearchParams({ page: currentPage, page_size: PAGE_SIZE });
+  if (keyword) params.set('keyword', keyword);
+  fetch(API_BASE + '/api/visits?' + params.toString())
     .then(res => res.json())
     .then(data => {
       const tbody = document.getElementById('tbody');
       const empty = document.getElementById('empty');
+      const pagination = document.getElementById('pagination');
       tbody.innerHTML = '';
       const items = data.items || [];
-      if (items.length === 0) { empty.style.display = 'block'; return; }
+      if (items.length === 0) { empty.style.display = 'block'; pagination.style.display = 'none'; return; }
       empty.style.display = 'none';
       items.forEach(v => {
         const tr = document.createElement('tr');
@@ -127,8 +154,19 @@ function loadVisits() {
         tr.onclick = () => location.href = 'visit_detail.html?id=' + v.id;
         tbody.appendChild(tr);
       });
+      renderPagination(data);
     })
     .catch(() => showMsg('加载失败，请确认后端已启动'));
+}
+
+function renderPagination(data) {
+  const total = data.total || 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const pagination = document.getElementById('pagination');
+  pagination.style.display = 'block';
+  document.getElementById('pageInfo').textContent = '第 ' + currentPage + ' / ' + totalPages + ' 页（共 ' + total + ' 条）';
+  document.getElementById('prevBtn').disabled = currentPage <= 1;
+  document.getElementById('nextBtn').disabled = currentPage >= totalPages;
 }
 
 loadVisits();
